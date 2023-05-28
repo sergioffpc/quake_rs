@@ -1,5 +1,4 @@
 use std::{
-    rc::Rc,
     thread,
     time::{Duration, Instant},
 };
@@ -26,9 +25,9 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let renderer = Rc::new(renderer::Renderer::new(&window).unwrap());
+    let renderer = renderer::Renderer::new(&window).unwrap();
     let camera = camera::Camera::new(cgmath::Deg(90.0), width as f32 / height as f32);
-    let mut scene = Scene::load(renderer.clone(), "").unwrap();
+    let mut scene = Scene::load(&renderer, "").unwrap();
 
     let target_fps = 60;
     let target_frame_time = Duration::from_secs_f64(1.0 / target_fps as f64);
@@ -49,7 +48,7 @@ fn main() {
         }
 
         // Update game logic
-        scene.update(&delta_time);
+        scene.update(&renderer.queue, &delta_time);
 
         // Render game state
         renderer

@@ -1,4 +1,4 @@
-use std::{error::Error, rc::Rc, time::Duration};
+use std::{error::Error, time::Duration};
 
 use crate::{
     animation::{Animation, KeyframeAnimationComponent},
@@ -16,7 +16,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn load<S>(renderer: Rc<Renderer>, name: S) -> Result<Self, Box<dyn Error>>
+    pub fn load<S>(renderer: &Renderer, name: S) -> Result<Self, Box<dyn Error>>
     where
         S: AsRef<str>,
     {
@@ -27,13 +27,13 @@ impl Scene {
         })
     }
 
-    pub fn update(&mut self, time: &Duration) {
+    pub fn update(&mut self, queue: &wgpu::Queue, time: &Duration) {
         for entity in self.entities.iter() {
             if let Some(animation_component) = entity.get_component::<KeyframeAnimationComponent>()
             {
                 if let Some(mesh_component) = entity.get_component::<MeshComponent>() {
                     let vertices = animation_component.animate(time).unwrap();
-                    mesh_component.update_vertex_buffer(&vertices);
+                    mesh_component.update_vertex_buffer(&queue, &vertices);
                 }
             }
         }
@@ -43,7 +43,7 @@ impl Scene {
         &self.entities
     }
 
-    fn create_alias_entity<S>(renderer: Rc<Renderer>, name: S) -> Result<Entity, Box<dyn Error>>
+    fn create_alias_entity<S>(renderer: &Renderer, name: S) -> Result<Entity, Box<dyn Error>>
     where
         S: AsRef<str>,
     {
@@ -57,16 +57,17 @@ impl Scene {
         entity.add_component(mesh_component);
 
         let material_component = MaterialComponent::new(
-            renderer.clone(),
+            renderer,
             &renderer.entity_render_pipeline.texture_bind_group_layout,
             mdl.skin_width,
             mdl.skin_height,
         );
 
         let skin = mdl.skins.first().unwrap();
-        material_component.update_texture_image(&resource::palette_index_to_rgba(
-            &skin.indices(&Duration::ZERO),
-        ));
+        material_component.update_texture_image(
+            &renderer.queue,
+            &resource::palette_index_to_rgba(&skin.indices(&Duration::ZERO)),
+        );
         entity.add_component(material_component);
 
         let mut animation_component = KeyframeAnimationComponent::new();

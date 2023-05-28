@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use wgpu::util::DeviceExt;
 
 use crate::renderer::Renderer;
@@ -8,12 +6,10 @@ pub struct MeshComponent {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub index_count: u32,
-
-    renderer: Rc<Renderer>,
 }
 
 impl MeshComponent {
-    pub fn new(renderer: Rc<Renderer>, vertex_count: usize, indices: &Vec<u32>) -> Self {
+    pub fn new(renderer: &Renderer, vertex_count: usize, indices: &Vec<u32>) -> Self {
         let vertex_buffer = renderer.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: (std::mem::size_of::<Vertex>() * vertex_count) as wgpu::BufferAddress,
@@ -32,15 +28,11 @@ impl MeshComponent {
             vertex_buffer,
             index_buffer,
             index_count: indices.len() as u32,
-
-            renderer: renderer.clone(),
         }
     }
 
-    pub fn update_vertex_buffer(&self, vertices: &Vec<Vertex>) {
-        self.renderer
-            .queue
-            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
+    pub fn update_vertex_buffer(&self, queue: &wgpu::Queue, vertices: &Vec<Vertex>) {
+        queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
     }
 }
 

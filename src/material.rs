@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use wgpu::BindGroupLayout;
 
 use crate::renderer::Renderer;
@@ -11,12 +9,11 @@ pub struct MaterialComponent {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
     sampler: wgpu::Sampler,
-    renderer: Rc<Renderer>,
 }
 
 impl MaterialComponent {
     pub fn new(
-        renderer: Rc<Renderer>,
+        renderer: &Renderer,
         bind_group_layout: &BindGroupLayout,
         width: u32,
         height: u32,
@@ -70,12 +67,11 @@ impl MaterialComponent {
             texture,
             view,
             sampler,
-            renderer: renderer.clone(),
         }
     }
 
-    pub fn update_texture_image(&self, image: &[u8]) {
-        self.renderer.queue.write_texture(
+    pub fn update_texture_image(&self, queue: &wgpu::Queue, image: &[u8]) {
+        queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &self.texture,
                 mip_level: 0,
