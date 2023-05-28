@@ -13,7 +13,7 @@ use winit::{
 
 fn main() {
     env_logger::init();
-    //resource::init("res/PAK0.PAK");
+    resource::init("res/PAK0.PAK");
 
     let width = 1280;
     let height = 720;

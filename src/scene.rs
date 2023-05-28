@@ -20,10 +20,10 @@ impl Scene {
     where
         S: AsRef<str>,
     {
-        //let zombie = Self::create_alias_entity(renderer.clone(), "progs/zombie.mdl")?;
+        let zombie = Self::create_alias_entity(renderer.clone(), "progs/zombie.mdl")?;
 
         Ok(Self {
-            entities: vec![/*zombie*/],
+            entities: vec![zombie],
         })
     }
 
