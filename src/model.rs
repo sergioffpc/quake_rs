@@ -7,7 +7,7 @@ use std::{
 use byteorder::{LittleEndian, ReadBytesExt};
 use cgmath::{InnerSpace, Vector3};
 
-use crate::{load_resource, mesh::Vertex1XYZ1N1UV, resource::GLOBAL_RESOURCES};
+use crate::{load_resource, mesh::Vertex, resource::GLOBAL_RESOURCES};
 
 #[derive(Clone, Debug)]
 pub struct Mdl {
@@ -38,7 +38,7 @@ impl Mdl {
         indices.into_boxed_slice()
     }
 
-    pub fn vertices(&self, frame: &Frame) -> Box<[Vertex1XYZ1N1UV]> {
+    pub fn vertices(&self, frame: &Frame) -> Box<[Vertex]> {
         let mut vertices = Vec::with_capacity(frame.vertices.len());
         for triangle in self.triangles.iter() {
             let mut face = [[0f32; 3]; 3];
@@ -63,7 +63,7 @@ impl Mdl {
             .normalize();
 
             for i in 0..3 {
-                vertices.push(Vertex1XYZ1N1UV {
+                vertices.push(Vertex {
                     position: face[i],
                     normal: normal.into(),
                     texcoord: skin_coords[i],
@@ -362,9 +362,9 @@ impl AnimatedKeyframe {
     ) -> Result<Self, Box<dyn Error>> {
         let num_subframes = reader.read_i32::<LittleEndian>()? as usize;
 
-        let min = Vertex1XYZ1N1UV::read_packed_position(reader, scale, origin)?;
+        let min = Vertex::read_packed_position(reader, scale, origin)?;
         reader.read_u8()?;
-        let max = Vertex1XYZ1N1UV::read_packed_position(reader, scale, origin)?;
+        let max = Vertex::read_packed_position(reader, scale, origin)?;
         reader.read_u8()?;
 
         let mut durations = Vec::with_capacity(num_subframes);
@@ -411,9 +411,9 @@ impl Frame {
         scale: [f32; 3],
         origin: [f32; 3],
     ) -> Result<Self, Box<dyn Error>> {
-        let min = Vertex1XYZ1N1UV::read_packed_position(reader, scale, origin)?;
+        let min = Vertex::read_packed_position(reader, scale, origin)?;
         reader.read_u8()?;
-        let max = Vertex1XYZ1N1UV::read_packed_position(reader, scale, origin)?;
+        let max = Vertex::read_packed_position(reader, scale, origin)?;
         reader.read_u8()?;
 
         let mut name_buf = [0u8; 16];
@@ -427,9 +427,7 @@ impl Frame {
 
         let mut vertices = Vec::with_capacity(num_verts as usize);
         for _ in 0..num_verts {
-            vertices.push(Vertex1XYZ1N1UV::read_packed_position(
-                reader, scale, origin,
-            )?);
+            vertices.push(Vertex::read_packed_position(reader, scale, origin)?);
             reader.read_u8()?;
         }
 
@@ -442,7 +440,7 @@ impl Frame {
     }
 }
 
-impl Vertex1XYZ1N1UV {
+impl Vertex {
     fn read_packed_position(
         reader: &mut Cursor<Vec<u8>>,
         scale: [f32; 3],

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use crate::mesh::Vertex1XYZ1N1UV;
+use crate::mesh::Vertex;
 
 pub struct KeyframeAnimationComponent {
     pub animations: HashMap<String, Animation>,
@@ -15,7 +15,7 @@ impl KeyframeAnimationComponent {
         }
     }
 
-    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex1XYZ1N1UV>> {
+    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex>> {
         let k = self.current_animation.as_ref()?;
         self.animations.get(k)?.animate(time)
     }
@@ -32,12 +32,12 @@ impl Animation {
         }
     }
 
-    pub fn add_keyframe(&mut self, vertices: Vec<Vertex1XYZ1N1UV>, duration: Duration) {
+    pub fn add_keyframe(&mut self, vertices: Vec<Vertex>, duration: Duration) {
         let keyframe = Keyframe { vertices, duration };
         self.keyframes.push(keyframe);
     }
 
-    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex1XYZ1N1UV>> {
+    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex>> {
         if self.keyframes.is_empty() {
             return None;
         }
@@ -75,7 +75,7 @@ impl Animation {
         prev_keyframe: &Keyframe,
         next_keyframe: &Keyframe,
         time: &Duration,
-    ) -> Vec<Vertex1XYZ1N1UV> {
+    ) -> Vec<Vertex> {
         // Interpolate the animation state between the keyframes based on the time
         // Perform interpolation for each property of the animation state
 
@@ -91,6 +91,6 @@ impl Animation {
 }
 
 pub struct Keyframe {
-    vertices: Vec<Vertex1XYZ1N1UV>,
+    vertices: Vec<Vertex>,
     duration: Duration,
 }

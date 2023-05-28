@@ -4,18 +4,19 @@ use wgpu::util::DeviceExt;
 use crate::{
     entity::Entity,
     material::MaterialComponent,
-    mesh::{MeshComponent, Vertex1XYZ1N1UV},
+    mesh::{MeshComponent, Vertex},
     transform::TransformComponent,
 };
 
 pub struct EntityPipeline {
-    pub albedo_texture: wgpu::Texture,
     pub albedo_view: wgpu::TextureView,
-    pub normal_texture: wgpu::Texture,
     pub normal_view: wgpu::TextureView,
-    pub depth_texture: wgpu::Texture,
     pub depth_view: wgpu::TextureView,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
+
+    albedo_texture: wgpu::Texture,
+    normal_texture: wgpu::Texture,
+    depth_texture: wgpu::Texture,
 
     model_matrix_buffer: wgpu::Buffer,
     model_bind_group: wgpu::BindGroup,
@@ -245,7 +246,7 @@ impl EntityPipeline {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[Vertex1XYZ1N1UV::desc()],
+                buffers: &[Vertex::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -279,6 +280,237 @@ impl EntityPipeline {
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+        })
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex1XY1UV {
+    position: [f32; 2],
+    texcoord: [f32; 2],
+}
+
+impl Vertex1XY1UV {
+    const VERTEX_ATTRS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2];
+
+    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &Self::VERTEX_ATTRS,
+        }
+    }
+}
+
+pub struct TargetPipeline {
+    target_vertex_buffer: wgpu::Buffer,
+    target_bind_group: wgpu::BindGroup,
+    render_pipeline: wgpu::RenderPipeline,
+}
+
+impl TargetPipeline {
+    const TARGET_VERTICES: [Vertex1XY1UV; 6] = [
+        Vertex1XY1UV {
+            position: [0.0, 0.0],
+            texcoord: [0.0, 1.0],
+        },
+        Vertex1XY1UV {
+            position: [0.0, 1.0],
+            texcoord: [0.0, 0.0],
+        },
+        Vertex1XY1UV {
+            position: [1.0, 1.0],
+            texcoord: [1.0, 0.0],
+        },
+        Vertex1XY1UV {
+            position: [0.0, 0.0],
+            texcoord: [0.0, 1.0],
+        },
+        Vertex1XY1UV {
+            position: [1.0, 1.0],
+            texcoord: [1.0, 0.0],
+        },
+        Vertex1XY1UV {
+            position: [1.0, 0.0],
+            texcoord: [1.0, 1.0],
+        },
+    ];
+
+    pub fn new<'a>(
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+        albedo_view: &'a wgpu::TextureView,
+        normal_view: &'a wgpu::TextureView,
+        depth_view: &'a wgpu::TextureView,
+    ) -> Self {
+        let target_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&Self::TARGET_VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let (target_bind_group, target_bind_group_layout) =
+            Self::create_target_bind_group(device, albedo_view, normal_view, depth_view);
+        let render_pipeline =
+            Self::create_render_pipeline(device, config.format, &[&target_bind_group_layout]);
+
+        Self {
+            target_vertex_buffer,
+            target_bind_group,
+            render_pipeline,
+        }
+    }
+
+    pub fn render_pass<'a>(&self, encoder: &mut wgpu::CommandEncoder, view: &'a wgpu::TextureView) {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.target_bind_group, &[]);
+        render_pass.set_vertex_buffer(0, self.target_vertex_buffer.slice(..));
+        render_pass.draw(0..6, 0..1);
+    }
+
+    fn create_target_bind_group<'a>(
+        device: &wgpu::Device,
+        albedo_view: &'a wgpu::TextureView,
+        normal_view: &'a wgpu::TextureView,
+        depth_view: &'a wgpu::TextureView,
+    ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
+        let target_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Depth,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: None,
+            });
+
+        let target_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+        let target_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &target_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(albedo_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(normal_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&target_sampler),
+                },
+            ],
+            label: None,
+        });
+
+        (target_bind_group, target_bind_group_layout)
+    }
+
+    fn create_render_pipeline<'a>(
+        device: &wgpu::Device,
+        format: wgpu::TextureFormat,
+        bind_group_layouts: &'a [&'a wgpu::BindGroupLayout],
+    ) -> wgpu::RenderPipeline {
+        let target_shader = device.create_shader_module(wgpu::include_wgsl!("target.wgsl"));
+        let target_render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: bind_group_layouts,
+                push_constant_ranges: &[],
+            });
+
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&target_render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &target_shader,
+                entry_point: "vs_main",
+                buffers: &[Vertex1XY1UV::desc()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &target_shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Cw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,

@@ -16,7 +16,7 @@ impl MeshComponent {
     pub fn new(renderer: Rc<Renderer>, vertex_count: usize, indices: &Vec<u32>) -> Self {
         let vertex_buffer = renderer.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: (std::mem::size_of::<Vertex1XYZ1N1UV>() * vertex_count) as wgpu::BufferAddress,
+            size: (std::mem::size_of::<Vertex>() * vertex_count) as wgpu::BufferAddress,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -37,7 +37,7 @@ impl MeshComponent {
         }
     }
 
-    pub fn update_vertex_buffer(&self, vertices: &Vec<Vertex1XYZ1N1UV>) {
+    pub fn update_vertex_buffer(&self, vertices: &Vec<Vertex>) {
         self.renderer
             .queue
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
@@ -46,13 +46,13 @@ impl MeshComponent {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex1XYZ1N1UV {
+pub struct Vertex {
     pub position: [f32; 3],
     pub normal: [f32; 3],
     pub texcoord: [f32; 2],
 }
 
-impl Vertex1XYZ1N1UV {
+impl Vertex {
     const VERTEX_ATTRS: [wgpu::VertexAttribute; 3] =
         wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x2];
 
