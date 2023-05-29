@@ -3,7 +3,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use quake_rs::{camera, renderer, resource, scene::Scene};
+use quake_rs::{
+    camera::{self, Camera},
+    renderer, resource,
+    scene::Scene,
+};
 use winit::{
     dpi::PhysicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -26,7 +30,7 @@ fn main() {
         .unwrap();
 
     let renderer = renderer::Renderer::new(&window).unwrap();
-    let camera = camera::Camera::new(cgmath::Deg(90.0), width as f32 / height as f32);
+    let mut camera = camera::Camera::new(cgmath::Deg(90.0), width as f32 / height as f32);
     let mut scene = Scene::load(&renderer, "").unwrap();
 
     let target_fps = 60;
@@ -42,7 +46,7 @@ fn main() {
         // Handle input events
         match event {
             Event::WindowEvent { event, window_id } if window_id == window.id() => {
-                handle_window_event(event, control_flow)
+                handle_window_event(event, control_flow, &mut camera)
             }
             _ => (),
         }
@@ -64,15 +68,15 @@ fn main() {
     });
 }
 
-fn handle_window_event(event: WindowEvent, control_flow: &mut ControlFlow) {
+fn handle_window_event(event: WindowEvent, control_flow: &mut ControlFlow, camera: &mut Camera) {
     match event {
         WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-        WindowEvent::KeyboardInput { input, .. } => handle_keyboard_input(input),
+        WindowEvent::KeyboardInput { input, .. } => handle_keyboard_input(input, camera),
         _ => (),
     }
 }
 
-fn handle_keyboard_input(input: KeyboardInput) {
+fn handle_keyboard_input(input: KeyboardInput, camera: &mut Camera) {
     match input {
         KeyboardInput {
             state: ElementState::Pressed,

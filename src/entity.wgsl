@@ -13,10 +13,14 @@ struct VertexOutput {
     @location(1)       texcoord : vec2<f32>,
 }
 
+fn from_quake_coords(coords: vec3<f32>) -> vec3<f32> {
+  return vec3<f32>(-coords.y, coords.z, -coords.x);
+}
+
 @vertex fn vs_main(in: VertexInput) -> VertexOutput {
     var out : VertexOutput;
 
-    out.clip = model * view_proj * vec4<f32>(in.position, 1.0);
+    out.clip = model * view_proj * vec4<f32>(from_quake_coords(in.position), 1.0);
     out.normal = in.normal;
     out.texcoord = in.texcoord;
 
@@ -35,8 +39,7 @@ struct FragmentOutput {
 @fragment fn fs_main(in: VertexOutput) -> FragmentOutput {
     var out : FragmentOutput;
 
-//    out.color = textureSample(diffuse_texture, diffuse_sampler, in.texcoord);
-    out.albedo_attachment = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    out.albedo_attachment = textureSample(diffuse_texture, diffuse_sampler, in.texcoord);
     out.normal_attachment = vec4<f32>(in.normal, 1.0);
 
     return out;

@@ -20,10 +20,10 @@ impl Scene {
     where
         S: AsRef<str>,
     {
-        let zombie = Self::create_alias_entity(renderer.clone(), "progs/zombie.mdl")?;
+        let entity = Self::create_alias_entity(renderer, "progs/knight.mdl")?;
 
         Ok(Self {
-            entities: vec![zombie],
+            entities: vec![entity],
         })
     }
 
@@ -48,14 +48,6 @@ impl Scene {
         S: AsRef<str>,
     {
         let mdl = Mdl::load(name)?;
-        let mut entity = Entity::new();
-        let mesh_component = MeshComponent::new(
-            renderer.clone(),
-            mdl.num_verts as usize,
-            &mdl.indices().to_vec(),
-        );
-        entity.add_component(mesh_component);
-
         let material_component = MaterialComponent::new(
             renderer,
             &renderer.entity_render_pipeline.texture_bind_group_layout,
@@ -68,7 +60,6 @@ impl Scene {
             &renderer.queue,
             &resource::palette_index_to_rgba(&skin.indices(&Duration::ZERO)),
         );
-        entity.add_component(material_component);
 
         let mut animation_component = KeyframeAnimationComponent::new();
         for keyframe in mdl.keyframes.iter() {
@@ -93,6 +84,22 @@ impl Scene {
                 model::Keyframe::Animated(_) => todo!(),
             }
         }
+
+        animation_component.current_animation = Some(
+            animation_component
+                .animations
+                .keys()
+                .next()
+                .unwrap()
+                .to_owned(),
+        );
+        let animation_vertices = animation_component.animate(&Duration::ZERO).unwrap();
+        let mesh_component = MeshComponent::new(renderer, animation_vertices.len());
+
+        let mut entity = Entity::new();
+        entity.add_component(animation_component);
+        entity.add_component(material_component);
+        entity.add_component(mesh_component);
 
         Ok(entity)
     }

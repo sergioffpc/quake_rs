@@ -15,7 +15,7 @@ impl KeyframeAnimationComponent {
         }
     }
 
-    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex>> {
+    pub fn animate(&self, time: &Duration) -> Option<&Vec<Vertex>> {
         let k = self.current_animation.as_ref()?;
         self.animations.get(k)?.animate(time)
     }
@@ -37,7 +37,10 @@ impl Animation {
         self.keyframes.push(keyframe);
     }
 
-    pub fn animate(&self, time: &Duration) -> Option<Vec<Vertex>> {
+    pub fn animate(&self, time: &Duration) -> Option<&Vec<Vertex>> {
+        let frame = self.keyframes.iter().next().unwrap();
+        return Some(&frame.vertices);
+
         if self.keyframes.is_empty() {
             return None;
         }
@@ -48,7 +51,7 @@ impl Animation {
         // Interpolate the animation state between the keyframes
         let vertices = self.interpolate(prev_keyframe, next_keyframe, time);
 
-        Some(vertices)
+        Some(&vertices)
     }
 
     fn find_keyframes(&self, time: &Duration) -> (&Keyframe, &Keyframe) {

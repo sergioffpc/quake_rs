@@ -140,11 +140,7 @@ impl EntityPipeline {
 
             if let Some(mesh_component) = entity.get_component::<MeshComponent>() {
                 render_pass.set_vertex_buffer(0, mesh_component.vertex_buffer.slice(..));
-                render_pass.set_index_buffer(
-                    mesh_component.index_buffer.slice(..),
-                    wgpu::IndexFormat::Uint32,
-                );
-                render_pass.draw_indexed(0..mesh_component.index_count, 0, 0..1);
+                render_pass.draw(0..mesh_component.vertex_count as u32, 0..1);
             }
         }
     }

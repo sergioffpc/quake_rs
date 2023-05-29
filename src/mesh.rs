@@ -1,33 +1,22 @@
-use wgpu::util::DeviceExt;
-
 use crate::renderer::Renderer;
 
 pub struct MeshComponent {
     pub vertex_buffer: wgpu::Buffer,
-    pub index_buffer: wgpu::Buffer,
-    pub index_count: u32,
+    pub vertex_count: usize,
 }
 
 impl MeshComponent {
-    pub fn new(renderer: &Renderer, vertex_count: usize, indices: &Vec<u32>) -> Self {
+    pub fn new(renderer: &Renderer, vertex_count: usize) -> Self {
         let vertex_buffer = renderer.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: (std::mem::size_of::<Vertex>() * vertex_count) as wgpu::BufferAddress,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let index_buffer = renderer
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: bytemuck::cast_slice(indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
 
         Self {
             vertex_buffer,
-            index_buffer,
-            index_count: indices.len() as u32,
+            vertex_count,
         }
     }
 

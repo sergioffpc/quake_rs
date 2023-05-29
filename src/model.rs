@@ -30,14 +30,6 @@ impl Mdl {
         Mdl::deserialize(&mut Cursor::new(load_resource!(name.as_ref())?))
     }
 
-    pub fn indices(&self) -> Box<[u32]> {
-        let mut indices = Vec::with_capacity(self.triangles.len() * 3);
-        self.triangles
-            .iter()
-            .for_each(|a| indices.append(&mut a.indices.to_vec()));
-        indices.into_boxed_slice()
-    }
-
     pub fn vertices(&self, frame: &Frame) -> Box<[Vertex]> {
         let mut vertices = Vec::with_capacity(frame.vertices.len());
         for triangle in self.triangles.iter() {
