@@ -3,6 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use log::debug;
 use quake_rs::{
     camera::{self, Camera},
     renderer, resource,
@@ -10,7 +11,7 @@ use quake_rs::{
 };
 use winit::{
     dpi::PhysicalSize,
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
@@ -30,7 +31,8 @@ fn main() {
         .unwrap();
 
     let renderer = renderer::Renderer::new(&window).unwrap();
-    let mut camera = camera::Camera::new(cgmath::Deg(90.0), width as f32 / height as f32);
+    let mut camera = camera::Camera::new(width, height);
+    camera.eye.z = 50f32;
     let mut scene = Scene::load(&renderer, "").unwrap();
 
     let target_fps = 60;
@@ -48,6 +50,7 @@ fn main() {
             Event::WindowEvent { event, window_id } if window_id == window.id() => {
                 handle_window_event(event, control_flow, &mut camera)
             }
+            Event::DeviceEvent { event, .. } => handle_device_event(event, &mut camera),
             _ => (),
         }
 
@@ -80,9 +83,30 @@ fn handle_keyboard_input(input: KeyboardInput, camera: &mut Camera) {
     match input {
         KeyboardInput {
             state: ElementState::Pressed,
-            virtual_keycode: Some(VirtualKeyCode::Escape),
+            virtual_keycode: Some(VirtualKeyCode::W),
             ..
-        } => {}
+        } => {
+            camera.eye.z -= 0.5;
+        }
+        KeyboardInput {
+            state: ElementState::Pressed,
+            virtual_keycode: Some(VirtualKeyCode::S),
+            ..
+        } => {
+            camera.eye.z += 0.5;
+        }
+        _ => (),
+    }
+}
+
+fn handle_device_event(event: DeviceEvent, camera: &mut Camera) {
+    match event {
+        DeviceEvent::MouseMotion { delta } => {}
+        DeviceEvent::MouseWheel { delta } => match delta {
+            winit::event::MouseScrollDelta::PixelDelta(ref pos) => {}
+            _ => (),
+        },
+        DeviceEvent::Button { button, state } => debug!("Button {:?} {:?}", button, state),
         _ => (),
     }
 }

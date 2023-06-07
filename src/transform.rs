@@ -25,7 +25,7 @@ impl TransformComponent {
     }
 
     pub fn scale(&mut self, scale: Vector3<f32>) {
-        self.scale.mul_element_wise(scale);
+        self.scale = self.scale.mul_element_wise(scale);
     }
 
     pub fn transform_matrix(&self) -> Matrix4<f32> {

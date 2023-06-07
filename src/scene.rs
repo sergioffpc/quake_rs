@@ -9,6 +9,7 @@ use crate::{
     model::{self, Mdl},
     renderer::Renderer,
     resource,
+    transform::TransformComponent,
 };
 
 pub struct Scene {
@@ -20,7 +21,9 @@ impl Scene {
     where
         S: AsRef<str>,
     {
-        let entity = Self::create_alias_entity(renderer, "progs/knight.mdl")?;
+        let mut entity = Self::create_alias_entity(renderer, "progs/knight.mdl")?;
+        let mut transform = TransformComponent::new();
+        entity.add_component(transform);
 
         Ok(Self {
             entities: vec![entity],

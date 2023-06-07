@@ -13,6 +13,8 @@ struct VertexOutput {
     @location(1)       texcoord : vec2<f32>,
 }
 
+/* The Quake coordinate system defines X as the longitudinal axis, Y as the
+ * lateral axis, and Z as the vertical axis.  */
 fn from_quake_coords(coords: vec3<f32>) -> vec3<f32> {
   return vec3<f32>(-coords.y, coords.z, -coords.x);
 }
