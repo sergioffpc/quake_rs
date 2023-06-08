@@ -1,6 +1,8 @@
 use std::f32::consts::FRAC_PI_2;
 
-use cgmath::{Matrix4, Point3, Rad, Vector3, Zero};
+use cgmath::{Matrix4, Point3, Rad, Vector3};
+
+use crate::hid::HIDEvent;
 
 pub struct Camera {
     field_of_view: Rad<f32>,
@@ -29,6 +31,13 @@ impl Camera {
             eye: Point3::new(0f32, 0f32, 0.0f32),
             center: Point3::new(0f32, 0f32, 0f32),
             up: Vector3::unit_y(),
+        }
+    }
+
+    pub fn update(&mut self, event: HIDEvent) {
+        match event {
+            HIDEvent::MoveForward(delta) => self.eye.z += delta,
+            HIDEvent::MoveBackward(delta) => self.eye.z -= delta,
         }
     }
 

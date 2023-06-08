@@ -15,6 +15,13 @@ lazy_static! {
     pub static ref GLOBAL_PALETTE: OnceCell<Box<[[u8; 3]; 256]>> = OnceCell::new();
 }
 
+#[macro_export]
+macro_rules! load_resource {
+    ($name: expr) => {
+        GLOBAL_RESOURCES.get().unwrap().lock().unwrap().read($name)
+    };
+}
+
 pub fn init<P>(path: P)
 where
     P: AsRef<Path>,
@@ -57,13 +64,6 @@ pub fn palette_index_to_rgba(indices: &Box<[u8]>) -> Box<[u8]> {
         }
     }
     rgba.into_boxed_slice()
-}
-
-#[macro_export]
-macro_rules! load_resource {
-    ($name: expr) => {
-        GLOBAL_RESOURCES.get().unwrap().lock().unwrap().read($name)
-    };
 }
 
 #[derive(Debug)]

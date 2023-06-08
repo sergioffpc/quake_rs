@@ -4,6 +4,7 @@ extern crate log;
 pub mod animation;
 pub mod camera;
 pub mod entity;
+pub mod hid;
 pub mod material;
 pub mod mesh;
 pub mod model;

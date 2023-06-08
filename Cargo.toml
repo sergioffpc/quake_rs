@@ -10,6 +10,7 @@ async-std = "1.12.0"
 bytemuck = { version = "1.13.1", features = ["derive"] }
 byteorder = "1.4.3"
 cgmath = "0.18.0"
+crossbeam-channel = "0.5.8"
 env_logger = "0.10.0"
 lazy_static = "1.4.0"
 log = "0.4.17"
