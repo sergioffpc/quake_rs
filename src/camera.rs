@@ -38,6 +38,18 @@ impl Camera {
         match event {
             HIDEvent::MoveForward(delta) => self.eye.z += delta,
             HIDEvent::MoveBackward(delta) => self.eye.z -= delta,
+            HIDEvent::MoveLeft(delta) => {
+                self.eye.x += delta;
+                self.center.x += delta;
+            }
+            HIDEvent::MoveRight(delta) => {
+                self.eye.x -= delta;
+                self.center.x -= delta;
+            }
+            HIDEvent::Motion(x, y) => {
+                self.center.x -= x;
+                self.center.y -= y;
+            }
         }
     }
 

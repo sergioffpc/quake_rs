@@ -23,6 +23,9 @@ pub fn init() {
 pub enum HIDEvent {
     MoveForward(f32),
     MoveBackward(f32),
+    MoveLeft(f32),
+    MoveRight(f32),
+    Motion(f32, f32),
 }
 
 pub struct HIDEventBus {
@@ -36,7 +39,7 @@ impl HIDEventBus {
         Self { sender, receiver }
     }
 
-    pub fn subscribe<F>(&self, callback: &mut F)
+    pub fn subscribe<F>(&self, mut callback: F)
     where
         F: FnMut(HIDEvent) + Send + 'static,
     {

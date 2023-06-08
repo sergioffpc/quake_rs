@@ -1,9 +1,9 @@
 use std::{
+    sync::{Arc, RwLock},
     thread,
     time::{Duration, Instant},
 };
 
-use log::debug;
 use quake_rs::{
     camera::Camera,
     hid::{self, HIDEvent, GLOBAL_HID_EVENT_BUS},
@@ -35,11 +35,14 @@ fn main() {
 
     let renderer = renderer::Renderer::new(&window).unwrap();
 
-    let mut camera = Camera::new(width, height);
-    GLOBAL_HID_EVENT_BUS
-        .get()
-        .unwrap()
-        .subscribe(&mut |event| camera.update(event));
+    let camera = Arc::new(RwLock::new(Camera::new(width, height)));
+    {
+        let camera_ref = camera.clone();
+        GLOBAL_HID_EVENT_BUS
+            .get()
+            .unwrap()
+            .subscribe(move |event| camera_ref.write().unwrap().update(event));
+    }
 
     let mut scene = Scene::load(&renderer, "").unwrap();
 
@@ -70,7 +73,10 @@ fn main() {
 
         // Render game state
         renderer
-            .render(&camera, scene.visible_entities(&camera))
+            .render(
+                &camera.read().unwrap(),
+                scene.visible_entities(&camera.read().unwrap()),
+            )
             .unwrap();
 
         // Control frame rate
@@ -88,16 +94,22 @@ fn handle_keyboard_input(input: KeyboardInput) {
             state: ElementState::Pressed,
             virtual_keycode: Some(VirtualKeyCode::W),
             ..
-        } => {
-            send_hid_event!(HIDEvent::MoveForward(0.5));
-        }
+        } => send_hid_event!(HIDEvent::MoveForward(1.0)),
         KeyboardInput {
             state: ElementState::Pressed,
             virtual_keycode: Some(VirtualKeyCode::S),
             ..
-        } => {
-            send_hid_event!(HIDEvent::MoveBackward(0.5));
-        }
+        } => send_hid_event!(HIDEvent::MoveBackward(1.0)),
+        KeyboardInput {
+            state: ElementState::Pressed,
+            virtual_keycode: Some(VirtualKeyCode::A),
+            ..
+        } => send_hid_event!(HIDEvent::MoveLeft(1.0)),
+        KeyboardInput {
+            state: ElementState::Pressed,
+            virtual_keycode: Some(VirtualKeyCode::D),
+            ..
+        } => send_hid_event!(HIDEvent::MoveRight(1.0)),
         _ => (),
     }
 }
@@ -105,15 +117,8 @@ fn handle_keyboard_input(input: KeyboardInput) {
 fn handle_mouse_input(event: DeviceEvent) {
     match event {
         DeviceEvent::MouseMotion { delta } => {
-            debug!("MouseMotion {:?}", delta)
+            send_hid_event!(HIDEvent::Motion(delta.0 as f32, delta.1 as f32))
         }
-        DeviceEvent::MouseWheel { delta } => match delta {
-            winit::event::MouseScrollDelta::PixelDelta(ref pos) => {
-                debug!("MouseWheel {:?}", pos)
-            }
-            _ => (),
-        },
-        DeviceEvent::Button { button, state } => debug!("Button {:?} {:?}", button, state),
         _ => (),
     }
 }
