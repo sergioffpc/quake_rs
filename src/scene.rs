@@ -6,7 +6,7 @@ use crate::{
     entity::Entity,
     material::MaterialComponent,
     mesh::MeshComponent,
-    model::{self, Mdl},
+    alias::{self, Mdl},
     renderer::Renderer,
     resource,
     transform::TransformComponent,
@@ -67,7 +67,7 @@ impl Scene {
         let mut animation_component = KeyframeAnimationComponent::new();
         for keyframe in mdl.keyframes.iter() {
             match *keyframe {
-                model::Keyframe::Static(ref kf) => {
+                alias::Keyframe::Static(ref kf) => {
                     let k =
                         kf.0.name
                             .trim_end_matches(|c: char| !c.is_alphabetic())
@@ -84,7 +84,7 @@ impl Scene {
                     let vertices = mdl.vertices(&kf.0).to_vec();
                     animation.add_keyframe(vertices, Duration::from_millis(100));
                 }
-                model::Keyframe::Animated(_) => todo!(),
+                alias::Keyframe::Animated(_) => todo!(),
             }
         }
 

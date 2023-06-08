@@ -8,7 +8,7 @@ use winit::window::Window;
 use crate::{
     camera::Camera,
     entity::Entity,
-    pipeline::{EntityPipeline, TargetPipeline},
+    pipeline::{AliasPipeline, TargetPipeline},
 };
 
 pub struct Renderer {
@@ -20,7 +20,7 @@ pub struct Renderer {
 
     view_projection_matrix_buffer: wgpu::Buffer,
     view_projection_bind_group: wgpu::BindGroup,
-    pub entity_render_pipeline: EntityPipeline,
+    pub entity_render_pipeline: AliasPipeline,
     target_render_pipeline: TargetPipeline,
 }
 
@@ -101,7 +101,7 @@ impl Renderer {
         });
 
         let entity_render_pipeline =
-            EntityPipeline::new(&device, &config, &[&view_projection_bind_group_layout]);
+            AliasPipeline::new(&device, &config, &[&view_projection_bind_group_layout]);
         let target_render_pipeline = TargetPipeline::new(
             &device,
             &config,

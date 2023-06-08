@@ -8,7 +8,7 @@ use crate::{
     transform::TransformComponent,
 };
 
-pub struct EntityPipeline {
+pub struct AliasPipeline {
     pub albedo_view: wgpu::TextureView,
     pub normal_view: wgpu::TextureView,
     pub depth_view: wgpu::TextureView,
@@ -23,7 +23,7 @@ pub struct EntityPipeline {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-impl EntityPipeline {
+impl AliasPipeline {
     pub fn new<'a>(
         device: &wgpu::Device,
         config: &wgpu::SurfaceConfiguration,
@@ -228,7 +228,7 @@ impl EntityPipeline {
         format: wgpu::TextureFormat,
         bind_group_layouts: &'a [&'a wgpu::BindGroupLayout],
     ) -> wgpu::RenderPipeline {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("entity.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("alias.wgsl"));
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: None,
