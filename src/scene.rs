@@ -1,12 +1,13 @@
 use std::{error::Error, time::Duration};
 
 use crate::{
+    alias::{self, Mdl},
     animation::{Animation, KeyframeAnimationComponent},
     camera::Camera,
     entity::Entity,
+    level::Bsp,
     material::MaterialComponent,
     mesh::MeshComponent,
-    alias::{self, Mdl},
     renderer::Renderer,
     resource,
     transform::TransformComponent,
@@ -21,8 +22,10 @@ impl Scene {
     where
         S: AsRef<str>,
     {
+        Bsp::load("maps/e1m1.bsp")?;
+
         let mut entity = Self::create_alias_entity(renderer, "progs/knight.mdl")?;
-        let mut transform = TransformComponent::new();
+        let transform = TransformComponent::new();
         entity.add_component(transform);
 
         Ok(Self {

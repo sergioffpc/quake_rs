@@ -66,7 +66,7 @@ impl Mdl {
     }
 
     fn deserialize(reader: &mut Cursor<Vec<u8>>) -> Result<Self, Box<dyn Error>> {
-        let ident = reader.read_i32::<LittleEndian>().unwrap();
+        let ident = reader.read_i32::<LittleEndian>()?;
         if ident != 0x4f504449 {
             return Err(Box::new(std::io::Error::new(
                 ErrorKind::InvalidData,
@@ -74,7 +74,7 @@ impl Mdl {
             )));
         }
 
-        let version = reader.read_i32::<LittleEndian>().unwrap();
+        let version = reader.read_i32::<LittleEndian>()?;
         if version != 6 {
             return Err(Box::new(std::io::Error::new(
                 ErrorKind::InvalidData,
@@ -83,30 +83,30 @@ impl Mdl {
         }
 
         let mut scale = [0f32; 3];
-        reader.read_f32_into::<LittleEndian>(&mut scale).unwrap();
+        reader.read_f32_into::<LittleEndian>(&mut scale)?;
 
         let mut origin = [0f32; 3];
-        reader.read_f32_into::<LittleEndian>(&mut origin).unwrap();
+        reader.read_f32_into::<LittleEndian>(&mut origin)?;
 
-        let bounding_radius = reader.read_f32::<LittleEndian>().unwrap();
+        let bounding_radius = reader.read_f32::<LittleEndian>()?;
 
         let mut position = [0f32; 3];
-        reader.read_f32_into::<LittleEndian>(&mut position).unwrap();
+        reader.read_f32_into::<LittleEndian>(&mut position)?;
 
-        let num_skins = reader.read_i32::<LittleEndian>().unwrap();
-        let skin_width = reader.read_i32::<LittleEndian>().unwrap();
-        let skin_height = reader.read_i32::<LittleEndian>().unwrap();
-        let num_verts = reader.read_i32::<LittleEndian>().unwrap();
-        let num_tris = reader.read_i32::<LittleEndian>().unwrap();
-        let num_frames: i32 = reader.read_i32::<LittleEndian>().unwrap();
-        let sync_type = reader.read_i32::<LittleEndian>().unwrap();
-        let flags: i32 = reader.read_i32::<LittleEndian>().unwrap();
-        let size = reader.read_f32::<LittleEndian>().unwrap();
+        let num_skins = reader.read_i32::<LittleEndian>()?;
+        let skin_width = reader.read_i32::<LittleEndian>()?;
+        let skin_height = reader.read_i32::<LittleEndian>()?;
+        let num_verts = reader.read_i32::<LittleEndian>()?;
+        let num_tris = reader.read_i32::<LittleEndian>()?;
+        let num_frames: i32 = reader.read_i32::<LittleEndian>()?;
+        let sync_type = reader.read_i32::<LittleEndian>()?;
+        let flags: i32 = reader.read_i32::<LittleEndian>()?;
+        let size = reader.read_f32::<LittleEndian>()?;
 
         debug!("MDL Header:");
         debug!(
             "  Ident:                 {}",
-            String::from_utf8(ident.to_le_bytes().to_vec()).unwrap()
+            String::from_utf8(ident.to_le_bytes().to_vec())?
         );
         debug!("  Version:               {:?}", version);
         debug!("  Scale:                 {:?}", scale);
